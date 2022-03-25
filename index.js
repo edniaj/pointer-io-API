@@ -29,27 +29,24 @@ app.get('/', async (req, res) => {
 
 // @routes for PERSON
 
-// Get person INFO
-app.get('/person/:personID', async (req, res) => {
+const getData = async (collectionName, req, res) => {
   try {
-    _id = req.params['personID'] == 'all' ? '' : ObjectId(req.params['personID'])
+    _id = req.params['id'] == 'all' ? '' : ObjectId(req.params['id'])
     CRITERIA = { _id }
-    let result = req.params['personID'] == 'all' ? await db.collection(PERSON).find({}).toArray() : await db.collection(PERSON).findOne(CRITERIA)
+    let result = req.params['id'] == 'all' ? await db.collection(collectionName).find({}).toArray() : await db.collection(collectionName).findOne(CRITERIA)
     res.status(200)
     res.send(result)
   } catch (e) {
     res.status(500)
     res.send('Internal server error')
   }
-})
+}
 
-// Register user
-app.post('/register', async (req, res) => {
-  
+const postData = async (collectionName, req, res) => {
   try {
     result = await req.body
 
-    db.collection(PERSON).insertOne(result)
+    db.collection(collectionName).insertOne(result)
 
     res.status(200)
     res.send(`User was added successfully`)
@@ -57,110 +54,82 @@ app.post('/register', async (req, res) => {
     res.status(500)
     res.send('Internal server error')
   }
-})
+}
 
-app.put('/edit/person/:id/', async (req, res) => {
-
+const putData = async (collectionName, req, res) => {
   try {
     // Get initial data from database first
     _id = ObjectId(req.params['id'])
+    console.log(_id)
     let CRITERIA = { _id }
-    let initialData = await db.collection(PERSON).findOne(CRITERIA)
-
-    putData = req.body
-
+    let initialData = await db.collection(collectionName).findOne(CRITERIA)
+    let putData = req.body
     writeData = {
       "$set": {
         ...initialData,
         ...putData
       }
     }
-
-    db.collection(PERSON).updateOne(CRITERIA, writeData)
+    console.log(writeData)
+    db.collection(collectionName).updateOne(CRITERIA, writeData)
     res.status(200)
     res.send("Updated successfully")
   } catch (e) {
     res.status(500)
     res.send('Internal server error')
   }
-})
+}
 
-app.delete("/delete/person/:id", async (req, res) => { // Does not delete array content. Use Put route instead
+const deleteData = async(collectionName,req,res) => {
   try {
     _id = ObjectId(req.params['id'])
     let CRITERIA = { _id }
-    db.collection(PERSON).deleteOne(CRITERIA)
+    db.collection(collectionName).deleteOne(CRITERIA)
     res.status(200)
     res.send('Delete was successfull')
   } catch (e) {
     res.status(500)
     res.send("Internal server error")
   }
-})
+}
+
+// Get person INFO
+app.get('/person/:id', async (req, res) =>
+  getData(PERSON, req, res)
+)
+
+// Register user
+app.post('/register', async (req, res) =>
+  postData(PERSON, req, res)
+)
+
+app.put('/person/edit/:id/', async (req, res) =>
+  putData(PERSON, req, res)
+)
+
+app.delete("/person/delete/:id", async (req, res) =>  
+  deleteData(PERSON,req,res)  
+)// Does not delete array content. Use Put route instead
 
 // end of Person Routes
 
 // @routes for jobOffer 
 
 // Get person INFO
-app.get('/job-offer/:jobID', async (req, res) => {
-  // Adjust code to accept query (must include arrays)
-  //623bf4ae5391a8802ca4fac4
-  try {
-    _id = req.params['jobID'] == 'all' ? '' : ObjectId(req.params['jobID'])
-    CRITERIA = { _id }
-    let result = req.params['jobID'] == 'all' ? await db.collection(JOBOFFER).find({}).toArray() : await db.collection(JOBOFFER).findOne(CRITERIA)
-    res.status(200)
-    res.send(result)
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
-})
+app.get('/job-offer/:id', async (req, res) =>
+  getData(JOBOFFER, req, res)
+)
 
 // Register user
-app.post('/add/job-offer', async (req, res) => {
-  // You cannot use query in post
-  try {
-    result = await req.body
+app.post('/job-offer/add', async (req, res) =>
+  postData(JOBOFFER, req, res)
+)
 
-    db.collection(JOBOFFER).insertOne(result)
+app.put('/job-offer/edit/:id', async (req, res) => 
+  putData('id',JOBOFFER,req,res)
+)
 
-    res.status(200)
-    res.send(`Job offer was added successfully`)
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
-})
-
-app.put('/edit/job-offer/:id/', async (req, res) => {
-
-  try {
-    // Get initial data from database first
-    _id = ObjectId(req.params['id'])
-    let CRITERIA = { _id }
-    let initialData = await db.collection(JOBOFFER).findOne(CRITERIA)
-
-    putData = req.body
-
-    writeData = {
-      "$set": {
-        ...initialData,
-        ...putData
-      }
-    }
-
-    db.collection(JOBOFFER).updateOne(CRITERIA, writeData)
-    res.status(200)
-    res.send("Updated successfully")
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
-})
-
-app.delete("/delete/job-offer/:id", async (req, res) => { // Does not delete array content. Use Put route instead
+app.delete("/job-offer/delete/:id", async (req, res) => { // Does not delete array content. Use Put route instead
   try {
     _id = ObjectId(req.params['id'])
     let CRITERIA = { _id }
