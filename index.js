@@ -16,9 +16,79 @@ let db
 // SETUP END
 
 // Variable USED
-const PERSON = 'person'
-const JOBOFFER = 'jobOffer'
+const CHAT = 'chat'
+const FEED = 'feed'
 const FRIEND = 'friend'
+const JOBOFFER = 'jobOffer'
+const MEETUP = 'meetup'
+const PERSON = 'person'
+
+// Helper functions
+
+const getData = async (collectionName, req, res) => {
+  try {
+    _id = req.params['id'] == 'all' ? '' : ObjectId(req.params['id'])
+    CRITERIA = { _id }
+    let result = req.params['id'] == 'all' ? await db.collection(collectionName).find({}).toArray() : await db.collection(collectionName).findOne(CRITERIA)
+    res.status(200)
+    res.send(result)
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
+}
+
+const postData = async (collectionName, req, res) => {
+  try {
+    result = await req.body
+
+    db.collection(collectionName).insertOne(result)
+
+    res.status(200)
+    res.send(`User was added successfully`)
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
+}
+
+const putData = async (collectionName, req, res) => {
+  try {
+    // Get initial data from database first
+    _id = ObjectId(req.params['id'])
+    let CRITERIA = { _id }
+    let initialData = await db.collection(collectionName).findOne(CRITERIA)
+    let putData = req.body
+    writeData = {
+      "$set": {
+        ...initialData,
+        ...putData
+      }
+    }
+    db.collection(collectionName).updateOne(CRITERIA, writeData)
+    res.status(200)
+    res.send("Updated successfully")
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
+}
+
+const deleteData = async (collectionName, req, res) => {
+  try {
+    console.log('a')
+    _id = ObjectId(req.params['id'])
+    let CRITERIA = { _id }
+    console.log(CRITERIA)
+    db.collection(collectionName).deleteOne(CRITERIA)
+    res.status(200)
+    res.send('Delete was successfull')
+  } catch (e) {
+    res.status(500)
+    res.send("Internal server error")
+  }
+}
+// End of helper functions
 
 // Test
 app.get('/', async (req, res) => {
@@ -30,155 +100,155 @@ app.get('/', async (req, res) => {
 // @routes for PERSON
 
 // Get person INFO
-app.get('/person/:personID', async (req, res) => {
-  try {
-    _id = req.params['personID'] == 'all' ? '' : ObjectId(req.params['personID'])
-    CRITERIA = { _id }
-    let result = req.params['personID'] == 'all' ? await db.collection(PERSON).find({}).toArray() : await db.collection(PERSON).findOne(CRITERIA)
-    res.status(200)
-    res.send(result)
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
+app.get('/person/:id', async (req, res) => {
+  getData(PERSON, req, res)
 })
 
 // Register user
-app.post('/register', async (req, res) => {
-  
-  try {
-    result = await req.body
+app.post('/register', async (req, res) =>
+// Validation in the forms.
+  postData(PERSON, req, res)
+)
 
-    db.collection(PERSON).insertOne(result)
+app.put('/person/edit/:id/', async (req, res) =>
+// Same validation in the forms
+  putData(PERSON, req, res)
+)
 
-    res.status(200)
-    res.send(`User was added successfully`)
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
-})
+app.delete("/person/delete/:id", async (req, res) =>
+  deleteData(PERSON, req, res)
+)// Does not delete array content. Use Put route instead
 
-app.put('/edit/person/:id/', async (req, res) => {
-
-  try {
-    // Get initial data from database first
-    _id = ObjectId(req.params['id'])
-    let CRITERIA = { _id }
-    let initialData = await db.collection(PERSON).findOne(CRITERIA)
-
-    putData = req.body
-
-    writeData = {
-      "$set": {
-        ...initialData,
-        ...putData
-      }
-    }
-
-    db.collection(PERSON).updateOne(CRITERIA, writeData)
-    res.status(200)
-    res.send("Updated successfully")
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
-})
-
-app.delete("/delete/person/:id", async (req, res) => { // Does not delete array content. Use Put route instead
-  try {
-    _id = ObjectId(req.params['id'])
-    let CRITERIA = { _id }
-    db.collection(PERSON).deleteOne(CRITERIA)
-    res.status(200)
-    res.send('Delete was successfull')
-  } catch (e) {
-    res.status(500)
-    res.send("Internal server error")
-  }
-})
-
-// end of Person Routes
 
 // @routes for jobOffer 
-
+// Redesign database so that we have separate column for currency and value
 // Get person INFO
-app.get('/job-offer/:jobID', async (req, res) => {
-  // Adjust code to accept query (must include arrays)
-  //623bf4ae5391a8802ca4fac4
-  try {
-    _id = req.params['jobID'] == 'all' ? '' : ObjectId(req.params['jobID'])
-    CRITERIA = { _id }
-    let result = req.params['jobID'] == 'all' ? await db.collection(JOBOFFER).find({}).toArray() : await db.collection(JOBOFFER).findOne(CRITERIA)
-    res.status(200)
-    res.send(result)
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
+app.get('/job-offer/:id', async (req, res) =>
+  getData(JOBOFFER, req, res)
+)
+
+
+app.post('/job-offer/add', async (req, res) =>
+// Add a new field for currency
+// Validation
+  postData(JOBOFFER, req, res)
+)
+
+app.put('/job-offer/edit/:id', async (req, res) =>
+  putData(JOBOFFER, req, res)
+)
+
+app.delete("/job-offer/delete/:id", async (req, res) =>
+
+  deleteData(JOBOFFER, req, res)
+)
+
+
+
+// @feed 
+
+app.get('/feed/:id', async (req, res) =>
+  getData(FEED, req, res)
+)
+
+
+app.post('/feed/add', async (req, res) =>
+  postData(FEED, req, res)
+)
+
+app.put('/feed/edit/:id', async (req, res) =>
+  putData(FEED, req, res)
+)
+
+app.delete("/feed/delete/:id", async (req, res) =>
+  deleteData(FEED, req, res)
+)
+
+// @meetup
+
+app.get('/meet-up/:id', async (req, res) =>
+  getData(MEETUP, req, res)
+)
+
+
+app.post('/meet-up/add', async (req, res) => {
+  // Validation. Ensure date is after current time and ISODate form
+  postData(MEETUP, req, res)
 })
 
-// Register user
-app.post('/add/job-offer', async (req, res) => {
-  // You cannot use query in post
-  try {
-    result = await req.body
+app.put('/meet-up/edit/:id', async (req, res) => {
+  // Validation. Ensure date is after current time and its in ISODate form
+  putData(MEETUP, req, res)
+}
+)
 
-    db.collection(JOBOFFER).insertOne(result)
+app.delete("/meet-up/delete/:id", async (req, res) =>
+  // Ensure that id exist
+  deleteData(MEETUP, req, res)
+)
 
-    res.status(200)
-    res.send(`Job offer was added successfully`)
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
+// @friend
+// Change following / follower r/s similar to twitter
+
+app.get('/friend/:id', async (req, res) =>
+  getData(FRIEND, req, res)
+)
+
+// Becareful of how you post. You need to either redesign relationship or edit both user friendlist
+app.post('/friend/add', async (req, res) =>
+  postData(FRIEND, req, res)
+)
+
+app.put('/friend/edit/:id', async (req, res) =>
+  putData(FRIEND, req, res)
+)
+
+app.delete("/friend/delete/:id", async (req, res) =>
+  deleteData(FRIEND, req, res)
+)
+
+// @chat
+
+app.get('/chat/:id', async (req, res) =>
+  getData(CHAT, req, res)
+)
+
+app.post('/chat/add', async (req, res) =>
+  postData(CHAT, req, res)
+)
+
+app.put('/chat/edit/:id', async (req, res) =>
+  putData(CHAT, req, res)
+)
+
+app.delete("/chat/delete/:id", async (req, res) =>
+  deleteData(CHAT, req, res)
+)
+
+//message
+
+app.get('/message/:id', async (req, res) =>
+  getData(MESSAGE, req, res)
+)
+
+app.post('/message/add', async (req, res) =>
+//Edit timestamp to be current date generated by server because of malicious actor.
+  postData(MESSAGE, req, res)
+)
+
+app.put('/message/edit/:id', async (req, res) =>
+//Edit timestamp to be current date generated by server because of malicious actor.
+  putData(MESSAGE, req, res)
+)
+
+app.delete("/message/delete/:id", async (req, res) =>
+  deleteData(MESSAGE, req, res)
+)
+
+// Booting server
+app.listen(process.env.PORT, () => {
+  console.log(`${process.env.PORT} has just started`)
 })
-
-app.put('/edit/job-offer/:id/', async (req, res) => {
-
-  try {
-    // Get initial data from database first
-    _id = ObjectId(req.params['id'])
-    let CRITERIA = { _id }
-    let initialData = await db.collection(JOBOFFER).findOne(CRITERIA)
-
-    putData = req.body
-
-    writeData = {
-      "$set": {
-        ...initialData,
-        ...putData
-      }
-    }
-
-    db.collection(JOBOFFER).updateOne(CRITERIA, writeData)
-    res.status(200)
-    res.send("Updated successfully")
-  } catch (e) {
-    res.status(500)
-    res.send('Internal server error')
-  }
-})
-
-app.delete("/delete/job-offer/:id", async (req, res) => { // Does not delete array content. Use Put route instead
-  try {
-    _id = ObjectId(req.params['id'])
-    let CRITERIA = { _id }
-    db.collection(JOBOFFER).deleteOne(CRITERIA)
-    res.status(200)
-    res.send('Delete was successfull')
-  } catch (e) {
-    res.status(500)
-    res.send("Internal server error")
-  }
-})
-
-
-
-// End of jobOffer routes
-
-
-
 
 /*
 Masterplan
@@ -202,7 +272,7 @@ get -> Get all info based on ID
   if query empty -> query everything
 
 post -> new job offers
-put -> For person to change the job offer 
+put -> For person to change the job offer
 update -> Must be careful of updating multivalued list (job tags, location)
 Delete -> Delete job offer
 
@@ -214,7 +284,7 @@ put -> Update the comments, like and share section. (update)
 delete -> just delete
 
 meet up
-get -> get the info thru query. Can query meet up with search engine, shud find thru interest tags 
+get -> get the info thru query. Can query meet up with search engine, shud find thru interest tags
 post -> post a new meet up
 put -> Change in date, purpose
 delete -> delete meet up
@@ -234,11 +304,40 @@ get -> get messages. Aggregate from and to field.
 put -> change / edit message. timestamp will automatically change
 <<<<<<< HEAD
 
-Search engine
-Use regex in get request 
+>>>>>>>>>><<<<<<<<< Search engine >>>>>>>>>>>>>>><<<<<<<<<
+
+// Person
+// Regex to find person based on name
+// Regex to find based on interest tag
+// Regex to find education and license / certification
+// Allow other user to find person based on email
+// jobAvailability -> Find available job people
+// Allow combining filter -> Job availability and education (maybe use regex)
+
+meetUp
+// REGEX allow to find meetup based on name
+// REGEX able to find meet up based on purpose
+// Ensure date is in ISODATE form (unix)
+// 
+
+friend
+// Change this to following / follower
+
+chat
+//chat
+
+message
+// Regex allow finding of message content
+
+jobOffer
+
+// REGEX to find job description
+// REGEX to find job title
+// REGEX to find jobTags
+// REGEX to find location
+// filter to find job based on pay $lte $gte
+// filter based on dateposted
+
 */
 
-// START SERVER
-app.listen(process.env.PORT, () => {
-  console.log(`${process.env.PORT} has just started`)
-})
+
