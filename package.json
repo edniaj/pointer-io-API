@@ -1,29 +1,43 @@
 {
-<<<<<<< HEAD
   "name": "express",
-=======
-  "name": "project2",
->>>>>>> 6657e3ffbf1bb4a2170604b3155934a1aeae1f1a
   "version": "1.0.0",
   "description": "Developing tech for the future",
   "main": "index.js",
+  "dependencies": {
+    "base64-js": "^1.5.1",
+    "bson": "^4.6.2",
+    "cors": "^2.8.5",
+    "denque": "^2.0.1",
+    "ieee754": "^1.2.1",
+    "ip": "^1.1.5",
+    "buffer": "^5.7.1",
+    "dotenv": "^16.0.0",
+    "mongodb": "^4.4.1",
+    "object-assign": "^4.1.1",
+    "memory-pager": "^1.5.0",
+    "smart-buffer": "^4.2.0",
+    "punycode": "^2.1.1",
+    "socks": "^2.6.2",
+    "mongodb-connection-string-url": "^2.5.2",
+    "sparse-bitfield": "^3.0.3",
+    "saslprep": "^1.0.3",
+    "webidl-conversions": "^7.0.0",
+    "tr46": "^3.0.0",
+    "vary": "^1.1.2",
+    "whatwg-url": "^11.0.0"
+  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-<<<<<<< HEAD
-  "author": "edniaj <jiandegoh@gmail.com>",
-  "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.0",
-    "mongodb": "^4.4.1"
-=======
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edniaj/pointerAPI.git"
+  },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "cors": "^2.8.5",
-    "mongodb": "^4.4.1",
-    "nodemon": "^2.0.15"
->>>>>>> 6657e3ffbf1bb4a2170604b3155934a1aeae1f1a
-  }
+  "bugs": {
+    "url": "https://github.com/edniaj/pointerAPI/issues"
+  },
+  "homepage": "https://github.com/edniaj/pointerAPI#readme"
 }

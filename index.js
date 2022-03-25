@@ -54,12 +54,12 @@ app.get("/person/:personID", async (req, res) => {
 // Register user
 app.post("/register", async (req, res) => { // You cannot use query in post
   try {
-    data = await req.body
-    data = data['data']
-    db.collection("person").insertOne({data})
+    result = await req.body
+
+    db.collection("person").insertOne(result)
 
     res.status(200)
-    res.send("Added successfully")
+    res.send(`${result} was added successfully`)
   } catch (e) {
 
     res.status(500)
@@ -67,8 +67,34 @@ app.post("/register", async (req, res) => { // You cannot use query in post
   }
 })
 
+app.put("/edit/person/:id/", async (req, res) => { // Incomplete
 
+  try {
+    // Get initial data from database first
+    _id = ObjectId(req.params['id'])
+    let result = await db.collection(PERSON).
+      find(
+        { _id },
+        {}
+      ).toArray()
+      
+    res.status(200)
+    res.send(result)
+  } catch (e) {
+    res.status(500)
+    res.send("Internal server error")
+  }
 
+  // Ensure that key specified exist
+
+  // Destructure and overlap
+
+  // query data -> change it
+})
+
+app.put("/reset/password/:id", async (req, res) => {
+
+})
 /*
 Masterplan
 
