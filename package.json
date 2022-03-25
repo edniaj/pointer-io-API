@@ -1,16 +1,29 @@
 {
+<<<<<<< HEAD
   "name": "express",
+=======
+  "name": "project2",
+>>>>>>> 6657e3ffbf1bb4a2170604b3155934a1aeae1f1a
   "version": "1.0.0",
   "description": "Developing tech for the future",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+<<<<<<< HEAD
   "author": "edniaj <jiandegoh@gmail.com>",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "mongodb": "^4.4.1"
+=======
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "mongodb": "^4.4.1",
+    "nodemon": "^2.0.15"
+>>>>>>> 6657e3ffbf1bb4a2170604b3155934a1aeae1f1a
   }
 }

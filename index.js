@@ -1,4 +1,5 @@
 const express = require("express");
+
 require("dotenv").config();
 const cors = require("cors");
 const ObjectId = require("mongodb").ObjectId;
@@ -72,6 +73,8 @@ app.post("/register", async (req, res) => { // You cannot use query in post
 Masterplan
 
 Allow front end to clean up data and verification/ validation
+=======
+
 person
 get -> All information get/:id/?education=valueInsideEducation
   -> if query is empty then query everything
@@ -118,6 +121,7 @@ delete -> delete chat
 messages
 get -> get messages. Aggregate from and to field.
 put -> change / edit message. timestamp will automatically change
+<<<<<<< HEAD
 
 Search engine
 Use regex in get request 
