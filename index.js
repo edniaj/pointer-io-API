@@ -16,73 +16,76 @@ let db
 // SETUP END
 
 // Variable USED
-const PERSON = 'person'
-const JOBOFFER = 'jobOffer'
+const CHAT = 'chat'
+const FEED = 'feed'
 const FRIEND = 'friend'
+const JOBOFFER = 'jobOffer'
+const MEETUP = 'meetup'
+const PERSON = 'person'
 
 // Helper functions
 
 const getData = async (collectionName, req, res) => {
   try {
-      _id = req.params['id'] == 'all' ? '' : ObjectId(req.params['id'])
-      CRITERIA = { _id }
-      let result = req.params['id'] == 'all' ? await db.collection(collectionName).find({}).toArray() : await db.collection(collectionName).findOne(CRITERIA)
-      res.status(200)
-      res.send(result)
+    _id = req.params['id'] == 'all' ? '' : ObjectId(req.params['id'])
+    CRITERIA = { _id }
+    let result = req.params['id'] == 'all' ? await db.collection(collectionName).find({}).toArray() : await db.collection(collectionName).findOne(CRITERIA)
+    res.status(200)
+    res.send(result)
   } catch (e) {
-      res.status(500)
-      res.send('Internal server error')
+    res.status(500)
+    res.send('Internal server error')
   }
 }
 
 const postData = async (collectionName, req, res) => {
   try {
-      result = await req.body
+    result = await req.body
 
-      db.collection(collectionName).insertOne(result)
+    db.collection(collectionName).insertOne(result)
 
-      res.status(200)
-      res.send(`User was added successfully`)
+    res.status(200)
+    res.send(`User was added successfully`)
   } catch (e) {
-      res.status(500)
-      res.send('Internal server error')
+    res.status(500)
+    res.send('Internal server error')
   }
 }
 
 const putData = async (collectionName, req, res) => {
   try {
-      // Get initial data from database first
-      _id = ObjectId(req.params['id'])
-      let CRITERIA = { _id }
-      let initialData = await db.collection(collectionName).findOne(CRITERIA)
-      let putData = req.body
-      writeData = {
-          "$set": {
-              ...initialData,
-              ...putData
-          }
+    // Get initial data from database first
+    _id = ObjectId(req.params['id'])
+    let CRITERIA = { _id }
+    let initialData = await db.collection(collectionName).findOne(CRITERIA)
+    let putData = req.body
+    writeData = {
+      "$set": {
+        ...initialData,
+        ...putData
       }
-      db.collection(collectionName).updateOne(CRITERIA, writeData)
-      res.status(200)
-      res.send("Updated successfully")
+    }
+    db.collection(collectionName).updateOne(CRITERIA, writeData)
+    res.status(200)
+    res.send("Updated successfully")
   } catch (e) {
-      res.status(500)
-      res.send('Internal server error')
+    res.status(500)
+    res.send('Internal server error')
   }
 }
 
 const deleteData = async (collectionName, req, res) => {
   try {
-      console.log('a')
-      _id = ObjectId(req.params['id'])
-      let CRITERIA = { _id }
-      console.log(CRITERIA)
-      db.collection(collectionName).deleteOne(CRITERIA)
-      res.status(200)
-      res.send('Delete was successfull')
+    console.log('a')
+    _id = ObjectId(req.params['id'])
+    let CRITERIA = { _id }
+    console.log(CRITERIA)
+    db.collection(collectionName).deleteOne(CRITERIA)
+    res.status(200)
+    res.send('Delete was successfull')
   } catch (e) {
-      res.status(500)
-      res.send("Internal server error")
+    res.status(500)
+    res.send("Internal server error")
   }
 }
 // End of helper functions
@@ -103,10 +106,12 @@ app.get('/person/:id', async (req, res) => {
 
 // Register user
 app.post('/register', async (req, res) =>
+// Validation in the forms.
   postData(PERSON, req, res)
 )
 
 app.put('/person/edit/:id/', async (req, res) =>
+// Same validation in the forms
   putData(PERSON, req, res)
 )
 
@@ -116,14 +121,16 @@ app.delete("/person/delete/:id", async (req, res) =>
 
 
 // @routes for jobOffer 
-
+// Redesign database so that we have separate column for currency and value
 // Get person INFO
 app.get('/job-offer/:id', async (req, res) =>
   getData(JOBOFFER, req, res)
 )
 
-// Register user
+
 app.post('/job-offer/add', async (req, res) =>
+// Add a new field for currency
+// Validation
   postData(JOBOFFER, req, res)
 )
 
@@ -132,15 +139,116 @@ app.put('/job-offer/edit/:id', async (req, res) =>
 )
 
 app.delete("/job-offer/delete/:id", async (req, res) =>
+
   deleteData(JOBOFFER, req, res)
 )
 
 
 
-// End of jobOffer routes
+// @feed 
+
+app.get('/feed/:id', async (req, res) =>
+  getData(FEED, req, res)
+)
 
 
+app.post('/feed/add', async (req, res) =>
+  postData(FEED, req, res)
+)
 
+app.put('/feed/edit/:id', async (req, res) =>
+  putData(FEED, req, res)
+)
+
+app.delete("/feed/delete/:id", async (req, res) =>
+  deleteData(FEED, req, res)
+)
+
+// @meetup
+
+app.get('/meet-up/:id', async (req, res) =>
+  getData(MEETUP, req, res)
+)
+
+
+app.post('/meet-up/add', async (req, res) => {
+  // Validation. Ensure date is after current time and ISODate form
+  postData(MEETUP, req, res)
+})
+
+app.put('/meet-up/edit/:id', async (req, res) => {
+  // Validation. Ensure date is after current time and its in ISODate form
+  putData(MEETUP, req, res)
+}
+)
+
+app.delete("/meet-up/delete/:id", async (req, res) =>
+  // Ensure that id exist
+  deleteData(MEETUP, req, res)
+)
+
+// @friend
+// Change following / follower r/s similar to twitter
+
+app.get('/friend/:id', async (req, res) =>
+  getData(FRIEND, req, res)
+)
+
+// Becareful of how you post. You need to either redesign relationship or edit both user friendlist
+app.post('/friend/add', async (req, res) =>
+  postData(FRIEND, req, res)
+)
+
+app.put('/friend/edit/:id', async (req, res) =>
+  putData(FRIEND, req, res)
+)
+
+app.delete("/friend/delete/:id", async (req, res) =>
+  deleteData(FRIEND, req, res)
+)
+
+// @chat
+
+app.get('/chat/:id', async (req, res) =>
+  getData(CHAT, req, res)
+)
+
+app.post('/chat/add', async (req, res) =>
+  postData(CHAT, req, res)
+)
+
+app.put('/chat/edit/:id', async (req, res) =>
+  putData(CHAT, req, res)
+)
+
+app.delete("/chat/delete/:id", async (req, res) =>
+  deleteData(CHAT, req, res)
+)
+
+//message
+
+app.get('/message/:id', async (req, res) =>
+  getData(MESSAGE, req, res)
+)
+
+app.post('/message/add', async (req, res) =>
+//Edit timestamp to be current date generated by server because of malicious actor.
+  postData(MESSAGE, req, res)
+)
+
+app.put('/message/edit/:id', async (req, res) =>
+//Edit timestamp to be current date generated by server because of malicious actor.
+  putData(MESSAGE, req, res)
+)
+
+app.delete("/message/delete/:id", async (req, res) =>
+  deleteData(MESSAGE, req, res)
+)
+
+// Booting server
+app.listen(process.env.PORT, () => {
+  console.log(`${process.env.PORT} has just started`)
+})
 
 /*
 Masterplan
@@ -164,7 +272,7 @@ get -> Get all info based on ID
   if query empty -> query everything
 
 post -> new job offers
-put -> For person to change the job offer 
+put -> For person to change the job offer
 update -> Must be careful of updating multivalued list (job tags, location)
 Delete -> Delete job offer
 
@@ -176,7 +284,7 @@ put -> Update the comments, like and share section. (update)
 delete -> just delete
 
 meet up
-get -> get the info thru query. Can query meet up with search engine, shud find thru interest tags 
+get -> get the info thru query. Can query meet up with search engine, shud find thru interest tags
 post -> post a new meet up
 put -> Change in date, purpose
 delete -> delete meet up
@@ -196,11 +304,40 @@ get -> get messages. Aggregate from and to field.
 put -> change / edit message. timestamp will automatically change
 <<<<<<< HEAD
 
-Search engine
-Use regex in get request 
+>>>>>>>>>><<<<<<<<< Search engine >>>>>>>>>>>>>>><<<<<<<<<
+
+// Person
+// Regex to find person based on name
+// Regex to find based on interest tag
+// Regex to find education and license / certification
+// Allow other user to find person based on email
+// jobAvailability -> Find available job people
+// Allow combining filter -> Job availability and education (maybe use regex)
+
+meetUp
+// REGEX allow to find meetup based on name
+// REGEX able to find meet up based on purpose
+// Ensure date is in ISODATE form (unix)
+// 
+
+friend
+// Change this to following / follower
+
+chat
+//chat
+
+message
+// Regex allow finding of message content
+
+jobOffer
+
+// REGEX to find job description
+// REGEX to find job title
+// REGEX to find jobTags
+// REGEX to find location
+// filter to find job based on pay $lte $gte
+// filter based on dateposted
+
 */
 
-// START SERVER
-app.listen(process.env.PORT, () => {
-  console.log(`${process.env.PORT} has just started`)
-})
+
