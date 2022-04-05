@@ -99,8 +99,21 @@ app.get('/', async (req, res) => {
 
 // @routes for PERSON
 
+//login route
+app.post('/login', async (req,res) => {
+  let CRITERIA = req.body
+  console.log('CRTIERIA :',CRITERIA)
+  let result = await db.collection(PERSON).find(req.body).toArray()
+  console.log(result)
+  // Do authentication
+  // End of authentication
+  res.send(result)
+
+})
+
 // Get person INFO
 app.get('/person/:id', async (req, res) => {
+  console.log('a')
   getData(PERSON, req, res)
 })
 
