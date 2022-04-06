@@ -99,11 +99,11 @@ app.get('/', async (req, res) => {
 // @route for login
 app.post('/login', async (req, res) => {
   try {
-    const {username, password} = req.body
+    const { username, password } = req.body
     console.log(username, password)
-    let CRITERIA = {email: username,password}
+    let CRITERIA = { email: username, password }
     let result = await db.collection(PERSON).findOne(CRITERIA)
-    console.log(result==null)
+    console.log(result == null)
     if (result == null) throw Error
     console.log('Success')
     res.status(200)
@@ -149,11 +149,10 @@ app.get('/job-offer/:id', async (req, res) =>
 )
 
 
-app.post('/job-offer/add', async (req, res) =>
-  // Add a new field for currency
-  // Validation
+app.post('/job-offer/add', async (req, res) => {
+  req.body.creator = ObjectId(req.body.creator)
   postData(JOBOFFER, req, res)
-)
+})
 
 app.put('/job-offer/edit/:id', async (req, res) =>
   putData(JOBOFFER, req, res)
