@@ -76,7 +76,6 @@ const putData = async (collectionName, req, res) => {
 
 const deleteData = async (collectionName, req, res) => {
   try {
-    console.log('a')
     _id = ObjectId(req.params['id'])
     let CRITERIA = { _id }
     console.log(CRITERIA)
@@ -100,10 +99,10 @@ app.get('/', async (req, res) => {
 // @routes for PERSON
 
 //login route
-app.post('/login', async (req,res) => {
+app.post('/login', async (req, res) => {
   let CRITERIA = req.body
-  console.log('CRTIERIA :',CRITERIA)
-  let result = await db.collection(PERSON).find(req.body).toArray()
+  console.log('CRTIERIA :', CRITERIA)
+  let result = await db.collection(PERSON).findOne(req.body)
   console.log(result)
   // Do authentication
   // End of authentication
@@ -113,18 +112,17 @@ app.post('/login', async (req,res) => {
 
 // Get person INFO
 app.get('/person/:id', async (req, res) => {
-  console.log('a')
   getData(PERSON, req, res)
 })
 
 // Register user
 app.post('/register', async (req, res) =>
-// Validation in the forms.
+  // Validation in the forms.
   postData(PERSON, req, res)
 )
 
 app.put('/person/edit/:id/', async (req, res) =>
-// Same validation in the forms
+  // Same validation in the forms
   putData(PERSON, req, res)
 )
 
@@ -132,7 +130,23 @@ app.delete("/person/delete/:id", async (req, res) =>
   deleteData(PERSON, req, res)
 )// Does not delete array content. Use Put route instead
 
+app.post('/person/criteria', async (req, res) => {
+  try {
+    let CRITERIA = {...req.body}
+    for(let i in CRITERIA._id['$in']) {
+      CRITERIA._id['$in'][i] = ObjectId(CRITERIA._id['$in'][i])
+    }
+    console.log('req.body  ',CRITERIA)
 
+    let result = await db.collection(PERSON).find(CRITERIA).toArray()
+    console.log('result  :',result)
+    res.status(200)
+    res.send(result)
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
+})
 // @routes for jobOffer 
 // Redesign database so that we have separate column for currency and value
 // Get person INFO
@@ -141,11 +155,11 @@ app.get('/job-offer/:id', async (req, res) =>
 )
 
 
-app.post('/job-offer/add', async (req, res) =>
-// Add a new field for currency
-// Validation
+app.post('/job-offer/add', async (req, res) => {
+  req.body.creator = ObjectId(req.body.creator) // Might give potential error cause its already an ObjectID format
+  console.log('test')
   postData(JOBOFFER, req, res)
-)
+})
 
 app.put('/job-offer/edit/:id', async (req, res) =>
   putData(JOBOFFER, req, res)
@@ -156,75 +170,34 @@ app.delete("/job-offer/delete/:id", async (req, res) =>
   deleteData(JOBOFFER, req, res)
 )
 
-
-
-// @feed 
-
-app.get('/feed/:id', async (req, res) =>
-  getData(FEED, req, res)
-)
-
-
-app.post('/feed/add', async (req, res) =>
-  postData(FEED, req, res)
-)
-
-app.put('/feed/edit/:id', async (req, res) =>
-  putData(FEED, req, res)
-)
-
-app.delete("/feed/delete/:id", async (req, res) =>
-  deleteData(FEED, req, res)
-)
-
-// @meetup
-
-app.get('/meet-up/:id', async (req, res) =>
-  getData(MEETUP, req, res)
-)
-
-
-app.post('/meet-up/add', async (req, res) => {
-  // Validation. Ensure date is after current time and ISODate form
-  postData(MEETUP, req, res)
+// Get job-offer that are linked to creator id
+app.get('/job-offer/view/:id', async (req, res) => {
+  try {
+    let _id = ObjectId(req.params['id'])
+    let CRITERIA = { creator: _id }
+    let result = await db.collection('jobOffer').find(CRITERIA).toArray()
+    res.status(200)
+    res.send(result)
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
 })
-
-app.put('/meet-up/edit/:id', async (req, res) => {
-  // Validation. Ensure date is after current time and its in ISODate form
-  putData(MEETUP, req, res)
-}
-)
-
-app.delete("/meet-up/delete/:id", async (req, res) =>
-  // Ensure that id exist
-  deleteData(MEETUP, req, res)
-)
-
-// @friend
-// Change following / follower r/s similar to twitter
-
-app.get('/friend/:id', async (req, res) =>
-  getData(FRIEND, req, res)
-)
-
-// Becareful of how you post. You need to either redesign relationship or edit both user friendlist
-app.post('/friend/add', async (req, res) =>
-  postData(FRIEND, req, res)
-)
-
-app.put('/friend/edit/:id', async (req, res) =>
-  putData(FRIEND, req, res)
-)
-
-app.delete("/friend/delete/:id", async (req, res) =>
-  deleteData(FRIEND, req, res)
-)
-
 // @chat
 
-app.get('/chat/:id', async (req, res) =>
-  getData(CHAT, req, res)
-)
+app.get('/chat/:id', async (req, res) => {
+  try {
+    let _id = ObjectId(req.params['id'])
+    console.log(_id)
+    CRITERIA = { participant: { "$in": [_id] } }
+    let result = await db.collection(CHAT).find(CRITERIA).toArray()
+    res.status(200)
+    res.send(result)
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
+})
 
 app.post('/chat/add', async (req, res) =>
   postData(CHAT, req, res)
@@ -240,17 +213,17 @@ app.delete("/chat/delete/:id", async (req, res) =>
 
 //message
 
-app.get('/message/:id', async (req, res) =>
+app.post('/message/criteria', async (req, res) =>
   getData(MESSAGE, req, res)
 )
 
 app.post('/message/add', async (req, res) =>
-//Edit timestamp to be current date generated by server because of malicious actor.
+  //Edit timestamp to be current date generated by server because of malicious actor.
   postData(MESSAGE, req, res)
 )
 
 app.put('/message/edit/:id', async (req, res) =>
-//Edit timestamp to be current date generated by server because of malicious actor.
+  //Edit timestamp to be current date generated by server because of malicious actor.
   putData(MESSAGE, req, res)
 )
 
