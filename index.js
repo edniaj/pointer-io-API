@@ -18,12 +18,9 @@ let db
 
 // Variable USED
 const CHAT = 'chat'
-const FEED = 'feed'
-const FRIEND = 'friend'
 const JOBOFFER = 'jobOffer'
-const MEETUP = 'meetup'
 const PERSON = 'person'
-
+const MESSAGECACHE = "messageCache"
 // Helper functions
 
 const getData = async (collectionName, req, res) => {
@@ -118,16 +115,16 @@ app.post('/login', async (req, res) => {
 // @routes for PERSON
 
 //login route
-app.post('/login', async (req, res) => {
-  let CRITERIA = req.body
-  console.log('CRTIERIA :', CRITERIA)
-  let result = await db.collection(PERSON).findOne(req.body)
-  console.log(result)
-  // Do authentication
-  // End of authentication
-  res.send(result)
+// app.post('/login', async (req, res) => {
+//   let CRITERIA = req.body
+//   console.log('CRTIERIA :', CRITERIA)
+//   let result = await db.collection(PERSON).findOne(req.body)
+//   console.log(result)
+//   // Do authentication
+//   // End of authentication
+//   res.send(result)
 
-})
+// })
 
 // Get person INFO
 app.get('/person/:id', async (req, res) => {
@@ -151,14 +148,14 @@ app.delete("/person/delete/:id", async (req, res) =>
 
 app.post('/person/criteria', async (req, res) => {
   try {
-    let CRITERIA = {...req.body}
-    for(let i in CRITERIA._id['$in']) {
+    let CRITERIA = { ...req.body }
+    for (let i in CRITERIA._id['$in']) {
       CRITERIA._id['$in'][i] = ObjectId(CRITERIA._id['$in'][i])
     }
-    console.log('req.body  ',CRITERIA)
+    // console.log('req.body  ',CRITERIA)
 
     let result = await db.collection(PERSON).find(CRITERIA).toArray()
-    console.log('result  :',result)
+    // console.log('result  :',result)
     res.status(200)
     res.send(result)
   } catch (e) {
@@ -206,7 +203,7 @@ app.get('/job-offer/view/:id', async (req, res) => {
 app.get('/chat/:id', async (req, res) => {
   try {
     let _id = ObjectId(req.params['id'])
-    console.log(_id)
+    // console.log(_id)
     CRITERIA = { participant: { "$in": [_id] } }
     let result = await db.collection(CHAT).find(CRITERIA).toArray()
     res.status(200)
@@ -229,6 +226,34 @@ app.delete("/chat/delete/:id", async (req, res) =>
   deleteData(CHAT, req, res)
 )
 
+//messageCache
+app.get('/messageCache/:id', async (req, res) => {
+  try {
+    let _id = ObjectId(req.params['id'])
+    let CRITERIA = { to: _id }
+    let result = await db.collection(MESSAGECACHE).find({
+      to: _id
+    }).toArray()
+
+    res.status(200)
+    res.send(result)
+  } catch (e) {
+    res.status(500)
+    res.send('Internal server error')
+  }
+})
+
+app.post('/messageCache/add', async (req, res) =>
+  postData(MESSAGECACHE, req, res)
+)
+
+app.put('/messageCache/edit/:id', async (req, res) =>
+  putData(MESSAGECACHE, req, res)
+)
+
+app.delete("/messageCache/delete/:id", async (req, res) =>
+  deleteData(MESSAGECACHE, req, res)
+)
 //message
 
 app.post('/message/criteria', async (req, res) =>
@@ -322,7 +347,7 @@ meetUp
 // REGEX allow to find meetup based on name
 // REGEX able to find meet up based on purpose
 // Ensure date is in ISODATE form (unix)
-// 
+//
 
 friend
 // Change this to following / follower
@@ -345,3 +370,8 @@ jobOffer
 */
 
 
+// db.messageCache.find(
+//   {
+//     to: ObjectId("624d1b9455469b89e419d590")
+//   }
+// )
