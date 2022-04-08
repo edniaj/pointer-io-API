@@ -57,10 +57,15 @@ const putData = async (collectionName, req, res) => {
     let CRITERIA = { _id }
     let initialData = await db.collection(collectionName).findOne(CRITERIA)
     let putData = req.body
+    let clone = {
+      ...initialData,
+      ...putData
+    }
+    delete clone["_id"]
+    clone['creator'] = ObjectId(clone['creator'])
     writeData = {
       "$set": {
-        ...initialData,
-        ...putData
+        ...clone
       }
     }
     db.collection(collectionName).updateOne(CRITERIA, writeData)
@@ -173,6 +178,8 @@ app.get('/job-offer/:id', async (req, res) =>
 
 app.post('/job-offer/add', async (req, res) => {
   req.body.creator = ObjectId(req.body.creator)
+  req.body.minPay = parseInt(req.body.minPay)
+  req.body.maxPay = parseInt(req.body.maxPay)
   postData(JOBOFFER, req, res)
 })
 
@@ -181,7 +188,6 @@ app.put('/job-offer/edit/:id', async (req, res) =>
 )
 
 app.delete("/job-offer/delete/:id", async (req, res) =>
-
   deleteData(JOBOFFER, req, res)
 )
 
@@ -197,6 +203,45 @@ app.get('/job-offer/view/:id', async (req, res) => {
     res.status(500)
     res.send('Internal server error')
   }
+})
+
+// For comprehensive filter method. 
+// when we receive req.body, it is in json.stringify format
+app.post('/job-offer/criteria', async (req, res) => {
+
+  for (let i in req.body) {
+    if (req.body[i].length == 0) delete req.body[i]
+  }
+  console.log(req.body)
+  let criteria = {
+    "$and": [],
+    '$or': []
+  }
+  for (let i in req.body) {
+    if (i == 'jobTitle') {
+      criteria['$and'].push({ jobTitle: { $regex: `${req.body[i]}`, $options: "i" } })
+    }
+    if (i == 'organizationName') {
+      criteria['$and'].push({ organizationName: { $regex: `${req.body[i]}`, $options: "i" } })
+    }
+    if (i == 'minPay') {
+      criteria['$and'].push({ minPay: { $gte: parseInt(req.body[i]) } })
+    }
+    if (i == 'maxPay') {
+      criteria['$and'].push({ maxPay: { $lte: parseInt(req.body[i]) } })
+
+    }
+    if (['fieldOfStudy', 'framework', 'programmingLanguage', 'selectJob'].includes(i)) {
+      if (req.body[i].length == 0) continue
+      criteria['$or'].push({ [i]: { $in: req.body[i] } })
+    }
+  }
+
+  if (criteria['$or'].length == 0) delete criteria['$or']
+  if (criteria['$and'].length == 0) delete criteria['$and']
+  console.log(JSON.stringify(criteria))
+  let result = await db.collection(JOBOFFER).find(criteria).project({ organizationName: 1 }).toArray()
+  console.log(result)
 })
 // @chat
 
@@ -279,7 +324,31 @@ app.listen(process.env.PORT, () => {
   console.log(`${process.env.PORT} has just started`)
 })
 
+
+
+
+// db.jobOffer.find({framework:{$in:[]}})
+// db.jobOffer.find({jobTitle:/Full stack/i},{jobTitle:1,minPay:-1}).sort({"minPay":1})
+
+// "$or":["minPay":{"$gte":3500}, "programmingLanguage":{"$in":["JavaScript"]}]
+
+// db.jobOffer.find({
+//   "$and": [
+//     {
+//       "$or":
+//         [
+//           { "minPay": { "$gte": 3500 } },
+
+//         ]
+//     } db.jobOffer.find({$or:[{jobTags:{$in:['Backend Developer']}}]})
+//   ]
+// })
 /*
+{
+        "programmingLanguage": {
+          "$in": ["JavaScript"]
+        }
+      }
 Masterplan
 
 Allow front end to clean up data and verification/ validation
