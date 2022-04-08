@@ -239,9 +239,16 @@ app.post('/job-offer/criteria', async (req, res) => {
 
   if (criteria['$or'].length == 0) delete criteria['$or']
   if (criteria['$and'].length == 0) delete criteria['$and']
-  console.log(JSON.stringify(criteria))
-  let result = await db.collection(JOBOFFER).find(criteria).project({ organizationName: 1 }).toArray()
-  console.log(result)
+  // console.log(JSON.stringify(criteria))
+  try {
+    let result = await db.collection(JOBOFFER).find(criteria).toArray()
+    res.status(200)
+    res.send(result)
+  } catch {
+    res.status(500)
+    res.send('Internal server error')
+  }
+  // console.log(result)
 })
 // @chat
 
