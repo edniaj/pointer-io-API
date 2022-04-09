@@ -102,7 +102,7 @@ app.get('/', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
-    let CRITERIA = { email , password }
+    let CRITERIA = { email, password }
     let result = await db.collection(PERSON).findOne(CRITERIA)
     console.log(result == null)
     if (result == null) throw Error
@@ -255,9 +255,104 @@ app.get('/chat/:id', async (req, res) => {
   }
 })
 
-app.post('/chat/add', async (req, res) =>
-  postData(CHAT, req, res)
-)
+// app.post('/chat/add', async (req, res) =>
+//   postData(CHAT, req, res)
+// )
+
+// SERVER SIDE VALIDATOR
+app.post('/chat/add', async (req, res) => {
+  try {
+    let { jobCreator, _userId } = req.body
+    if (jobCreator == _userId) {
+      console.log("job creator should not be the same as userid")
+      throw Error('ngmi')
+    }
+    jobCreator = ObjectId(jobCreator)
+    _userId = ObjectId(_userId)
+    let participantCriteria = {
+      'participant': {
+        $all: [jobCreator, _userId]
+      }
+    }
+    let result = await db.collection('chat').findOne(participantCriteria)
+    if (result != null) throw [result['_id'].toString(), _userId]
+    let timestamp = (new Date().getTime())
+    let chatId = new ObjectId()
+    await db.collection('chat').insertOne(
+      {
+        _id: chatId,
+        participant: [jobCreator, _userId],
+        timestamp
+      }
+    )
+    console.log("Just added new chatID")
+    let cache_1 = new ObjectId()
+    let cache_2 = new ObjectId()
+    console.log('cache 1:', cache_1, 'cache 2:', cache_2, '\nchatId: ', chatId)
+    let person1 = await db.collection('person').findOne(jobCreator)
+    let person2 = await db.collection('person').findOne(_userId)
+    let writeCache1 = {
+      _id: cache_1,
+      chatId,
+      from: jobCreator,
+      to: _userId,
+      lastMessage: "",
+      unreadCount: Number(0),
+      timestamp,
+      imageUrl: person1['imageUrl'],
+      firstName: person1['firstName'],
+      lastName: person1['lastName']
+    }
+    let writeCache2 = {
+      _id: cache_2,
+      chatId,
+      from: _userId,
+      to: jobCreator,
+      lastMessage: "",
+      unreadCount: Number(0),
+      timestamp,
+      imageUrl: person2['imageUrl'],
+      firstName: person2['firstName'],
+      lastName: person2['lastName']
+    }
+    await db.collection('messageCache').insertMany([writeCache1, writeCache2])
+    res.status(200)
+    res.send(chatId)
+  } catch (err) {
+    try {
+      // err[0] = chatId, err[1] = _userId
+      let chatId = err[0]
+      let _userId = err[1]
+      console.log('err :', typeof (err), err)
+      console.log('_userId: ', err[0])
+      console.log('chatId : ', err[1])
+      let timestamp = (new Date().getTime())
+      let person1 = await db.collection('person').findOne({ _id: ObjectId(_userId) })
+      let message = [`Greetings, my name is ${person1.firstName} ${person1.lastName} and I'm interested in the Job Posting.
+      I am currently based at ${person1.country}`,`My contact details are `, `Contact number : ${person1.countryCode} ${person1.contactNumber}    Email address : ${person1.email} `,`I am currently${person1.jobAvailability ? '' : ' not'} available for the job`]
+      let writeData = {
+        chatId: ObjectId(chatId),
+        timestamp,
+        message,
+        from: ObjectId(_userId)
+      }
+      console.log('writeData :', writeData)
+      db.collection('message').insertOne(writeData)
+    } catch (e) {
+      // res.status(500)
+      // res.send(err[0])
+    }
+    res.status(500)
+    res.send(err[0])
+  }
+
+})
+
+// db.chat.findOne({
+//   participant:{
+//     $all: [ObjectId('624ed316bed37d50765b291c'), ObjectId("624d1b9455469b89e419d590")]
+//   }
+// })
 
 app.put('/chat/edit/:id', async (req, res) =>
   putData(CHAT, req, res)
@@ -350,7 +445,7 @@ app.post('/message/add', async (req, res) => {
 
 
     res.status(200)
-    res.send(`User was added successfully`)
+    res.send(`Message was sent`)
   } catch (e) {
     res.status(500)
     res.send('Internal server error')
@@ -373,7 +468,11 @@ app.listen(process.env.PORT, () => {
 
 
 
-
+// db.chat.findOne({
+//   participant:{
+//     $all: [ObjectId('624ed316bed37d50765b291c'), ObjectId("624d1b9455469b89e419d590")]
+//   }
+// })
 // db.messageCache.insertOne({
 //   chatId: ObjectId("624ecf784ab76ecc4ec6155a"),
 //   from: ObjectId("624d1b9455469b89e419d590"),
