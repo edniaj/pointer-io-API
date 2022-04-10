@@ -119,6 +119,17 @@ app.post('/login', async (req, res) => {
 
 // @routes for PERSON
 
+//login route
+app.post('/login', async (req, res) => {
+  let CRITERIA = req.body
+  console.log('CRTIERIA :', CRITERIA)
+  let result = await db.collection(PERSON).findOne(req.body)
+  console.log(result)
+  // Do authentication
+  // End of authentication
+  res.send(result)
+
+})
 
 // Get person INFO
 app.get('/person/:id', async (req, res) => {
@@ -222,14 +233,14 @@ app.delete("/person/delete/:id", async (req, res) =>
 
 app.post('/person/criteria', async (req, res) => {
   try {
-    let CRITERIA = { ...req.body }
-    for (let i in CRITERIA._id['$in']) {
+    let CRITERIA = {...req.body}
+    for(let i in CRITERIA._id['$in']) {
       CRITERIA._id['$in'][i] = ObjectId(CRITERIA._id['$in'][i])
     }
-    // console.log('req.body  ',CRITERIA)
+    console.log('req.body  ',CRITERIA)
 
     let result = await db.collection(PERSON).find(CRITERIA).toArray()
-    // console.log('result  :',result)
+    console.log('result  :',result)
     res.status(200)
     res.send(result)
   } catch (e) {
@@ -273,58 +284,12 @@ app.get('/job-offer/view/:id', async (req, res) => {
     res.send('Internal server error')
   }
 })
-
-// For comprehensive filter method. 
-// when we receive req.body, it is in json.stringify format
-app.post('/job-offer/criteria', async (req, res) => {
-
-  for (let i in req.body) {
-    if (req.body[i].length == 0) delete req.body[i]
-  }
-  console.log(req.body)
-  let criteria = {
-    "$and": [],
-    '$or': []
-  }
-  for (let i in req.body) {
-    if (i == 'jobTitle') {
-      criteria['$and'].push({ jobTitle: { $regex: `${req.body[i]}`, $options: "i" } })
-    }
-    if (i == 'organizationName') {
-      criteria['$and'].push({ organizationName: { $regex: `${req.body[i]}`, $options: "i" } })
-    }
-    if (i == 'minPay') {
-      criteria['$and'].push({ minPay: { $gte: parseInt(req.body[i]) } })
-    }
-    if (i == 'maxPay') {
-      criteria['$and'].push({ maxPay: { $lte: parseInt(req.body[i]) } })
-
-    }
-    if (['fieldOfStudy', 'framework', 'programmingLanguage', 'selectJob'].includes(i)) {
-      if (req.body[i].length == 0) continue
-      criteria['$or'].push({ [i]: { $in: req.body[i] } })
-    }
-  }
-
-  if (criteria['$or'].length == 0) delete criteria['$or']
-  if (criteria['$and'].length == 0) delete criteria['$and']
-  // console.log(JSON.stringify(criteria))
-  try {
-    let result = await db.collection(JOBOFFER).find(criteria).toArray()
-    res.status(200)
-    res.send(result)
-  } catch {
-    res.status(500)
-    res.send('Internal server error')
-  }
-  // console.log(result)
-})
 // @chat
 
 app.get('/chat/:id', async (req, res) => {
   try {
     let _id = ObjectId(req.params['id'])
-    // console.log(_id)
+    console.log(_id)
     CRITERIA = { participant: { "$in": [_id] } }
     let result = await db.collection(CHAT).find(CRITERIA).toArray()
     res.status(200)
@@ -501,10 +466,9 @@ app.delete("/messageCache/delete/:id", async (req, res) =>
 )
 //message
 
-// Get data thru a post request
-app.post('/message/criteria', async (req, res) => {
-  try {
-    let criteria = { chatId: ObjectId(req.body['chatId']) }
+app.post('/message/criteria', async (req, res) =>
+  getData(MESSAGE, req, res)
+)
 
     let result = await db.collection('message').find(criteria)
       .sort({ timestamp: 1 })
