@@ -466,11 +466,10 @@ app.delete("/messageCache/delete/:id", async (req, res) =>
 )
 //message
 
-app.post('/message/criteria', async (req, res) =>
-  getData(MESSAGE, req, res)
-)
-
-    let result = await db.collection('message').find(criteria)
+app.post('/message/criteria', async (req, res) => {
+  try {
+    let chatId = ObjectId(req.body['chatId'])
+    let result = await db.collection('message').find({chatId})
       .sort({ timestamp: 1 })
       .toArray()
     res.status(200)
