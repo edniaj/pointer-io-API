@@ -125,10 +125,90 @@ app.get('/person/:id', async (req, res) => {
   getData(PERSON, req, res)
 })
 
-// Register user
-app.post('/register', async (req, res) =>
-  // Validation in the forms.
-  postData(PERSON, req, res)
+// SERVER VALIDATION
+app.post('/register', async (req, res) => {
+
+  const validateEmail = x => {
+    x = x === undefined ? '' : x
+    let isValid = x.match(
+      /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+    )
+    if (!isValid) throw 'Please enter a valid email address'
+  }
+  const validatePassword = x => {
+    x = x === undefined ? '' : x
+    let upperCase = false
+    let lowerCase = false
+    let number = false
+    for (let i of x) {
+      if (/[a-z]/.test(i)) lowerCase = true
+      if (/[A-Z]/.test(i)) upperCase = true
+      if (/[0-9]/.test(i)) number = true
+    }
+    if (x.length >= 8 && x.length <= 16 && lowerCase && upperCase && number) {
+      return
+    }
+    // at least one uppercase letter, one lowercase letter, one number and one special character: min length 8, max length 16
+    throw "Password invalid"
+  }
+  const validateString = x => {
+
+    x = x === undefined ? '' : x
+    if (x.length === 0) {
+      console.log('validate string')
+      throw `Field cannot be empty`
+    }
+    for (let i of x) {
+      if (!/[a-zA-Z\s]/.test(i)) {
+        console.log('invalid string')
+        throw `Field only consist of characters`
+      }
+    }
+    return false
+  }
+  const validateContactNumber = x => {
+    x = x === undefined ? '' : x
+    if (x.length === 0) throw "Phone number cannot be empty"
+    for (let i of x) {
+      if (!/[0-9]/.test(i)) {
+        if (i !== '-') throw "Phone number can only consist of numbers and '-' "
+      }
+    }
+    return false
+  }
+  try {
+    let result = await req.body
+    console.log(req.body)
+    validateEmail(req.body.email)
+    validatePassword(req.body.password)
+    const { email, imageUrl, firstName, lastName, country, jobAvailability, contactNumber } = req.body
+    let stringField = [firstName, lastName, country, jobAvailability]
+    if (imageUrl.length == 0) throw "Image url must not be empty"
+    console.log(stringField)
+    for (let i of stringField) validateString(i)
+    validateContactNumber(contactNumber)
+    console.log("OK")
+    await db.collection('person').findOne({ email })
+      .then(x => {
+        if (x == null) {
+          console.log(x)
+          console.log('user does not exist')
+          result['_id'] = new ObjectId()
+          db.collection('person').insertOne(result) // IMPORTANT
+        }
+        else {
+          console.log('user exist')
+          throw "User is registered"
+        }
+      })
+    res.status(200)
+    res.send(result['_id'])
+  } catch (err) {
+    res.status(500)
+    console.log(`error ${err}`)
+    res.send(err)
+  }
+}
 )
 
 app.put('/person/edit/:id/', async (req, res) =>
@@ -291,12 +371,14 @@ app.post('/chat/add', async (req, res) => {
     console.log('cache 1:', cache_1, 'cache 2:', cache_2, '\nchatId: ', chatId)
     let person1 = await db.collection('person').findOne(jobCreator)
     let person2 = await db.collection('person').findOne(_userId)
+    let message = [`Greetings, my name is ${person2.firstName} ${person2.lastName} and I'm interested in the Job Posting.
+      I am currently based at ${person2.country}`, `My contact details are `, `Contact number : ${person2.countryCode} ${person2.contactNumber}    Email address : ${person2.email} `, `I am currently${person2.jobAvailability ? '' : ' not'} available for the job`]
     let writeCache1 = {
       _id: cache_1,
       chatId,
       from: jobCreator,
       to: _userId,
-      lastMessage: "",
+      lastMessage: `I am currently${person2.jobAvailability ? '' : ' not'} available for the job`,
       unreadCount: Number(0),
       timestamp,
       imageUrl: person1['imageUrl'],
@@ -308,14 +390,24 @@ app.post('/chat/add', async (req, res) => {
       chatId,
       from: _userId,
       to: jobCreator,
-      lastMessage: "",
-      unreadCount: Number(0),
+      lastMessage: `I am currently${person2.jobAvailability ? '' : ' not'} available for the job`,
+      unreadCount: Number(4),
       timestamp,
       imageUrl: person2['imageUrl'],
       firstName: person2['firstName'],
       lastName: person2['lastName']
     }
     await db.collection('messageCache').insertMany([writeCache1, writeCache2])
+
+
+    let writeData = {
+      chatId,
+      timestamp,
+      message,
+      from: ObjectId(_userId)
+    }
+    console.log('writeData :', writeData)
+    db.collection('message').insertOne(writeData)
     res.status(200)
     res.send(chatId)
   } catch (err) {
@@ -327,9 +419,9 @@ app.post('/chat/add', async (req, res) => {
       console.log('_userId: ', err[0])
       console.log('chatId : ', err[1])
       let timestamp = (new Date().getTime())
-      let person1 = await db.collection('person').findOne({ _id: ObjectId(_userId) })
-      let message = [`Greetings, my name is ${person1.firstName} ${person1.lastName} and I'm interested in the Job Posting.
-      I am currently based at ${person1.country}`,`My contact details are `, `Contact number : ${person1.countryCode} ${person1.contactNumber}    Email address : ${person1.email} `,`I am currently${person1.jobAvailability ? '' : ' not'} available for the job`]
+      let person2 = await db.collection('person').findOne({ _id: ObjectId(_userId) })
+      let message = [`Greetings, my name is ${person2.firstName} ${person2.lastName} and I'm interested in the Job Posting.
+      I am currently based at ${person2.country}`, `My contact details are `, `Contact number : ${person2.countryCode} ${person2.contactNumber}    Email address : ${person2.email} `, `I am currently${person2.jobAvailability ? '' : ' not'} available for the job`]
       let writeData = {
         chatId: ObjectId(chatId),
         timestamp,
@@ -369,7 +461,7 @@ app.get('/messageCache/:id', async (req, res) => {
     let CRITERIA = { to: _id }
     let result = await db.collection(MESSAGECACHE).find({
       to: _id
-    }).toArray()
+    }).sort({ timestamp: -1 }).toArray()
 
     res.status(200)
     res.send(result)
