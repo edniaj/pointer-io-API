@@ -233,14 +233,14 @@ app.delete("/person/delete/:id", async (req, res) =>
 
 app.post('/person/criteria', async (req, res) => {
   try {
-    let CRITERIA = {...req.body}
-    for(let i in CRITERIA._id['$in']) {
+    let CRITERIA = { ...req.body }
+    for (let i in CRITERIA._id['$in']) {
       CRITERIA._id['$in'][i] = ObjectId(CRITERIA._id['$in'][i])
     }
-    console.log('req.body  ',CRITERIA)
+    console.log('req.body  ', CRITERIA)
 
     let result = await db.collection(PERSON).find(CRITERIA).toArray()
-    console.log('result  :',result)
+    console.log('result  :', result)
     res.status(200)
     res.send(result)
   } catch (e) {
@@ -310,7 +310,7 @@ app.post('/chat/add', async (req, res) => {
     let { jobCreator, _userId } = req.body
     if (jobCreator == _userId) {
       console.log("job creator should not be the same as userid")
-      throw Error('ngmi')
+      throw ''
     }
     jobCreator = ObjectId(jobCreator)
     _userId = ObjectId(_userId)
@@ -466,11 +466,10 @@ app.delete("/messageCache/delete/:id", async (req, res) =>
 )
 //message
 
-app.post('/message/criteria', async (req, res) =>
-  getData(MESSAGE, req, res)
-)
-
-    let result = await db.collection('message').find(criteria)
+app.post('/message/criteria', async (req, res) => {
+  try {
+    let chatId = ObjectId(req.body['chatId'])
+    let result = await db.collection('message').find({chatId})
       .sort({ timestamp: 1 })
       .toArray()
     res.status(200)
@@ -494,11 +493,10 @@ app.post('/message/add', async (req, res) => {
       from,
       timestamp
     }
-
+    console.log(lastMessage)
     db.collection('message').insertOne(writeMessage)
     db.collection('messageCache').updateMany({ chatId }, { $set: { lastMessage } })
     db.collection('messageCache').updateOne({ chatId, from }, { $inc: { unreadCount: 1 } })
-
 
     res.status(200)
     res.send(`Message was sent`)
