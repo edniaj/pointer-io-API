@@ -284,6 +284,51 @@ app.get('/job-offer/view/:id', async (req, res) => {
     res.send('Internal server error')
   }
 })
+
+
+app.post('/job-offer/criteria', async (req, res) => {
+
+  for (let i in req.body) {
+    if (req.body[i].length == 0) delete req.body[i]
+  }
+  console.log(req.body)
+  let criteria = {
+    "$and": [],
+    '$or': []
+  }
+  for (let i in req.body) {
+    if (i == 'jobTitle') {
+      criteria['$and'].push({ jobTitle: { $regex: `${req.body[i]}`, $options: "i" } })
+    }
+    if (i == 'organizationName') {
+      criteria['$and'].push({ organizationName: { $regex: `${req.body[i]}`, $options: "i" } })
+    }
+    if (i == 'minPay') {
+      criteria['$and'].push({ minPay: { $gte: parseInt(req.body[i]) } })
+    }
+    if (i == 'maxPay') {
+      criteria['$and'].push({ maxPay: { $lte: parseInt(req.body[i]) } })
+
+    }
+    if (['fieldOfStudy', 'framework', 'programmingLanguage', 'selectJob'].includes(i)) {
+      if (req.body[i].length == 0) continue
+      criteria['$or'].push({ [i]: { $in: req.body[i] } })
+    }
+  }
+
+  if (criteria['$or'].length == 0) delete criteria['$or']
+  if (criteria['$and'].length == 0) delete criteria['$and']
+  // console.log(JSON.stringify(criteria))
+  try {
+    let result = await db.collection(JOBOFFER).find(criteria).toArray()
+    res.status(200)
+    res.send(result)
+  } catch {
+    res.status(500)
+    res.send('Internal server error')
+  }
+  // console.log(result)
+})
 // @chat
 
 app.get('/chat/:id', async (req, res) => {
