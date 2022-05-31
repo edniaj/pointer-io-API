@@ -103,8 +103,12 @@ app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
     let CRITERIA = { email, password }
-    let result = await db.collection(PERSON).findOne(CRITERIA)
-    console.log(result == null)
+    let result = await db.collection(PERSON).findOne(CRITERIA, { projection: { 'email': 1, 'password': 1 } })
+
+    if (!(result['password'] == password) || !(result['email'] == email)) throw new Error("Wrong detail")
+
+
+
     if (result == null) throw Error
     console.log('Success')
     res.status(200)
@@ -251,8 +255,9 @@ app.post('/person/criteria', async (req, res) => {
 // @routes for jobOffer 
 // Redesign database so that we have separate column for currency and value
 // Get person INFO
-app.get('/job-offer/:id', async (req, res) =>
+app.get('/job-offer/:id', async (req, res) => {
   getData(JOBOFFER, req, res)
+}
 )
 
 
@@ -277,6 +282,7 @@ app.get('/job-offer/view/:id', async (req, res) => {
     let _id = ObjectId(req.params['id'])
     let CRITERIA = { creator: _id }
     let result = await db.collection('jobOffer').find(CRITERIA).toArray()
+    console.log(result)
     res.status(200)
     res.send(result)
   } catch (e) {
@@ -514,7 +520,7 @@ app.delete("/messageCache/delete/:id", async (req, res) =>
 app.post('/message/criteria', async (req, res) => {
   try {
     let chatId = ObjectId(req.body['chatId'])
-    let result = await db.collection('message').find({chatId})
+    let result = await db.collection('message').find({ chatId })
       .sort({ timestamp: 1 })
       .toArray()
     res.status(200)
